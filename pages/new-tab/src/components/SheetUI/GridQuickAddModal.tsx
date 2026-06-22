@@ -1,0 +1,819 @@
+import type React from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useGridStore } from './gridStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MdLockOutline } from 'react-icons/md';
+import { BsPeopleFill, BsPersonFill } from 'react-icons/bs';
+import SaveDestinationPicker from '../Editor/SaveDestinationPicker';
+import VariableDropdown from '../Editor/VariableDropdown';
+import { clsx } from 'clsx';
+import { GridMultiLinkInput } from './GridMultiLinkInput';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectAllData, optimisticAddSnippet } from '../../../../Redux/AllData/allDataSlice';
+import { selectSelectedTeam, queueNotification, selectIsMac, selectDarkMode } from '../../../../Redux/AllData/uiStateSlice';
+import {
+  updateSnippetRealtime,
+} from '../../../../Apis/features/snippetApi';
+import {
+  addFavorite,
+} from '../../../../Apis/services/favoritesApi';
+import { getUserId } from '../../../../Apis/core/api';
+import { FaStar, FaCode, FaTerminal, FaCheck, FaTimes, FaFolder, FaChevronDown, FaGlobe } from 'react-icons/fa';
+import { FiStar, FiHelpCircle, FiZap, FiGlobe } from 'react-icons/fi';
+
+// Helper to resolve icon strings to emojis (matches SheetTable logic)
+const resolveIcon = (iconStr: string | null | undefined, defaultEmoji: string) => {
+  if (!iconStr) return defaultEmoji;
+  if (iconStr.startsWith('U+')) {
+    try {
+      return String.fromCodePoint(parseInt(iconStr.replace('U+', ''), 16));
+    } catch (e) {
+      return defaultEmoji;
+    }
+  }
+  return defaultEmoji;
+};
+
+const GridQuickAddModal: React.FC = () => {
+  const dispatch = useDispatch<any>();
+  const isMac = useSelector(selectIsMac);
+  const { quickAddModal, setQuickAddModal } = useGridStore();
+  const allTeams = useSelector(selectAllData);
+  const selectedTeam = useSelector(selectSelectedTeam);
+
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isEditingLinks, setIsEditingLinks] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Robust State
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isFav, setIsFav] = useState(false);
+  const isDarkMode = useSelector(selectDarkMode);
+
+  useEffect(() => {
+    getUserId().then(id => setUserId(id));
+  }, []);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const folderBtnRef = useRef<HTMLButtonElement>(null);
+  const saveBtnRef = useRef<HTMLButtonElement>(null);
+  const linkDisplayRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Layout Constants for Exact Grid Consistency
+  const ROW_HEIGHT = 'min-h-[44px]';
+  const NOTE_DESCRIPTION_ROW_HEIGHT = 'min-h-[140px]';
+  const FONT_STYLE = 'text-[11px] font-medium';
+  const BORDER_COLOR = 'border-[#e1e1e1]';
+
+  // Location State
+  const [selectedLocation, setSelectedLocation] = useState<{
+    workspaceId: string;
+    folderId?: string;
+    path: string;
+    isPersonal: boolean;
+    visibilityType?: 'lock' | 'globe' | 'users' | 'personal';
+  } | null>(null);
+
+  // Variable Dropdown State
+  const [isVariableDropdownOpen, setIsVariableDropdownOpen] = useState(false);
+  const [variableHighlightIndex, setVariableHighlightIndex] = useState(0);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [varCounter, setVarCounter] = useState(1);
+
+  const handleVariableSelect = (value: string) => {
+    const textarea = contentRef.current as HTMLTextAreaElement | null;
+    if (!textarea) return;
+
+    const cursorPosition = textarea.selectionStart;
+    const beforeAt = content.substring(0, Math.max(0, cursorPosition - 1));
+    const afterAt = content.substring(cursorPosition);
+
+    let insertionText = value;
+    if (value === 'custom') {
+      insertionText = `{{var${varCounter}}}`;
+      setVarCounter(prev => prev + 1);
+    }
+
+    const newContent = beforeAt + insertionText + afterAt;
+    setContent(newContent);
+    const newCursorPos = beforeAt.length + insertionText.length;
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+
+    setIsVariableDropdownOpen(false);
+  };
+
+  const parseInitialLinkUrls = (rawContent: string): string[] => {
+    const trimmed = rawContent.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.map(v => String(v).trim()).filter(Boolean);
+      }
+      if (parsed && Array.isArray(parsed.urls)) {
+        return parsed.urls.map((v: unknown) => String(v).trim()).filter(Boolean);
+      }
+    } catch {
+      // Fallback for legacy comma-separated single-string storage.
+    }
+
+    return trimmed
+      .split(',')
+      .map(v => v.trim())
+      .filter(Boolean);
+  };
+
+  const orgTeam = useMemo(() => {
+    if (selectedTeam && selectedTeam.is_personal_space !== true) return selectedTeam;
+    return allTeams?.find((t: any) => t.is_personal_space !== true) || null;
+  }, [selectedTeam, allTeams]);
+
+  const personalWorkspaces = useMemo(() => {
+    const pTeam = allTeams?.find((t: any) => t.is_personal_space === true || t.team_name === 'Personal Space');
+    return pTeam?.workspaces || [];
+  }, [allTeams]);
+
+  const linkPreview = useMemo(() => {
+    const urls = parseInitialLinkUrls(content);
+    if (urls.length === 0) return { text: '', moreCount: 0 };
+
+    const domains = urls.map(u => {
+      try {
+        const hostname = new URL(u.startsWith('http') ? u : `https://${u}`).hostname;
+        return hostname.replace('www.', '');
+      } catch {
+        return u;
+      }
+    });
+
+    return {
+      text: domains.slice(0, 3).join(', '),
+      moreCount: Math.max(0, domains.length - 3),
+    };
+  }, [content]);
+
+  useEffect(() => {
+    if (quickAddModal.isOpen) {
+      setTitle('');
+      setContent('');
+      setIsSaving(false);
+
+      const initLocation = async () => {
+        // Try specific key first, then fallback to the other type's storage if empty
+        const primaryKey = quickAddModal.type === 'link' ? 'lastLinkDestination' : 'lastNoteDestination';
+        const secondaryKey = quickAddModal.type === 'link' ? 'lastNoteDestination' : 'lastLinkDestination';
+
+        const result: any = await new Promise(res => chrome.storage.local.get([primaryKey, secondaryKey], res));
+        const lastDest = result[primaryKey] || result[secondaryKey];
+
+        if (lastDest && allTeams) {
+          for (const team of allTeams) {
+            const ws = team.workspaces?.find((w: any) => w.workspace_id === lastDest.workspace_id);
+            if (ws) {
+              const isPersonal = team.is_personal_space === true;
+              let currentPath = lastDest.path || ws.workspace_name;
+
+              // Ensure path has icons if it doesn't seem to have them
+              if (
+                !currentPath.includes('📁') &&
+                !currentPath.includes('📂') &&
+                !currentPath.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]/)
+              ) {
+                const wsIcon = resolveIcon(ws.icon, '📁');
+                currentPath = `${wsIcon} ${ws.workspace_name}`;
+                if (lastDest.folder_id) {
+                  // We'd need to find the folder to get its icon, but for now we fallback to the name
+                  currentPath += ` / 📂 ${lastDest.folder || 'Folder'}`;
+                }
+              }
+
+              setSelectedLocation({
+                workspaceId: ws.workspace_id,
+                folderId: lastDest.folder_id,
+                path: currentPath,
+                isPersonal,
+                visibilityType: isPersonal ? 'personal' : 'globe',
+              });
+              return;
+            }
+          }
+        }
+
+        if (orgTeam && orgTeam.workspaces?.length > 0) {
+          const ws = orgTeam.workspaces[0];
+          const wsIcon = resolveIcon(ws.icon, '📁');
+          setSelectedLocation({
+            workspaceId: ws.workspace_id,
+            path: `${wsIcon} ${ws.workspace_name}`,
+            isPersonal: false,
+            visibilityType: 'globe',
+          });
+        }
+      };
+      initLocation();
+    }
+  }, [quickAddModal.isOpen, quickAddModal.type, allTeams, orgTeam]);
+
+  // Handle immediate Focus
+  useEffect(() => {
+    if (quickAddModal.isOpen) {
+      // Small timeout to allow animation to start and DOM to settle
+      const timer = setTimeout(() => {
+        titleRef.current?.focus();
+        titleRef.current?.select();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [quickAddModal.isOpen]);
+
+  // Focus trapping and Navigation
+  useEffect(() => {
+    if (!quickAddModal.isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't stop propagation immediately; let internal components handle their keys first.
+
+      // Check navigation keys
+      const handledKeys = ['Tab', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Escape', 'Enter'];
+      if (!handledKeys.includes(e.key)) return;
+
+      // Stop the event from reaching the background grid (always, to prevent leakage)
+      e.stopPropagation();
+
+      // Critical: block other window-level listeners (like SheetTable global handler)
+      // so modal shortcuts don't close the entire sheet.
+      if (e.key === 'Escape' || ((e.ctrlKey || e.metaKey) && e.key === 'Enter')) {
+        e.stopImmediatePropagation();
+      }
+
+      // If Picker or Variable Dropdown is Open, let it handle its own keys entirely
+      if (isPickerOpen || isVariableDropdownOpen) return;
+
+      // Special case: if focus is inside GridMultiLinkInput, let it handle arrows/enter/tab unless Esc
+      // We check for 'link-input-container' which is the wrapper inside GridMultiLinkInput
+      const isInsideLinkInput = document.activeElement?.closest('.link-input-container');
+      if (isInsideLinkInput && ['ArrowDown', 'ArrowUp', 'Enter', 'Tab'].includes(e.key)) {
+        return;
+      }
+
+      const currentActive = document.activeElement as HTMLElement;
+      let secondField: HTMLElement | null = null;
+      if (quickAddModal.type === 'link') {
+        if (isEditingLinks) {
+          // If focus is already inside the link editor, use the current active element to ensure indexOf works
+          if (currentActive?.closest('.link-input-container')) {
+            secondField = currentActive;
+          } else {
+            secondField = modalRef.current?.querySelector('input[placeholder*="URL"]') as HTMLElement;
+          }
+        } else {
+          secondField = linkDisplayRef.current;
+        }
+      } else {
+        secondField = contentRef.current;
+      }
+
+      const inputs = [titleRef.current, secondField, folderBtnRef.current, saveBtnRef.current].filter(
+        Boolean,
+      ) as HTMLElement[];
+
+      const activeIdx = inputs.indexOf(currentActive);
+
+      if (e.key === 'Tab') {
+        // Only run modal-level Tab logic if we are NOT inside a link input,
+        // OR if we are on the first/last input of that component and moving out.
+        // For simplicity, we only intercept Tab if it's NOT a link input, or if it's a link input but we want to force jump.
+        // Actually, let's keep it simple: if inside link input, let browser handle Tab unless it hits boundaries.
+        // But for now, let's just make sure Tab doesn't jump to field 0.
+        if (activeIdx === -1) {
+          // If we are inside but not found, don't preventDefault, let browser handle it.
+          return;
+        }
+        e.preventDefault();
+        const nextIdx = e.shiftKey ? (activeIdx - 1 + inputs.length) % inputs.length : (activeIdx + 1) % inputs.length;
+        inputs[nextIdx]?.focus();
+      } else if (e.key === 'ArrowDown') {
+        // If we are in Link mode and in an input, don't move out unless it's the last one
+        if (quickAddModal.type === 'link' && currentActive?.tagName === 'INPUT' && currentActive !== titleRef.current) {
+          // Inner Link inputs handle their own internal arrow nav
+          return;
+        }
+        if (activeIdx !== -1 && activeIdx < inputs.length - 1) {
+          e.preventDefault();
+          inputs[activeIdx + 1]?.focus();
+        }
+      } else if (e.key === 'ArrowUp') {
+        if (quickAddModal.type === 'link' && currentActive?.tagName === 'INPUT' && currentActive !== titleRef.current) {
+          // Inner Link inputs handle their own internal arrow nav or exit back to Title
+          const linkInputs = Array.from(modalRef.current?.querySelectorAll('input[placeholder*="URL"]') || []);
+          if (document.activeElement === linkInputs[0]) {
+            e.preventDefault();
+            titleRef.current?.focus();
+          }
+          return;
+        }
+        if (activeIdx !== -1 && activeIdx > 0) {
+          e.preventDefault();
+          inputs[activeIdx - 1]?.focus();
+        }
+      } else if (e.key === 'Enter') {
+        const isNoteDescription = activeIdx === 1 && quickAddModal.type === 'note';
+        const isLinkCell = activeIdx === 1 && quickAddModal.type === 'link' && !isEditingLinks;
+
+        if (!e.ctrlKey && !e.metaKey) {
+          // If on Link cell in Display mode, enter Edit mode
+          if (isLinkCell) {
+            e.preventDefault();
+            setIsEditingLinks(true);
+            return;
+          }
+
+          // In Title or Folder button or Save button, just save
+          if (activeIdx === 0 || activeIdx === 2 || activeIdx === 3) {
+            e.preventDefault();
+            handleSave();
+          }
+          // If in Description textarea, standard Enter allows newline,
+          // but we can make it save if we want. Sheets usually commits on Enter.
+          // For now, let's keep Enter in textarea as "save" unless Shift is held.
+          // If in Description area, let Quill handle Enter unless Ctrl/Cmd
+          else if (isNoteDescription) {
+            if (!e.shiftKey) {
+              e.preventDefault();
+              handleSave();
+            }
+          }
+        } else {
+          // Ctrl+Enter or Cmd+Enter always saves
+          e.preventDefault();
+          handleSave();
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setQuickAddModal(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [quickAddModal.isOpen, quickAddModal.type, title, content, selectedLocation]);
+
+  const handleSave = async (finalContent?: string) => {
+    const activeContent = finalContent !== undefined ? finalContent : content;
+    if (!title.trim() || (quickAddModal.type !== 'link' && !activeContent.trim()) || !selectedLocation) {
+      dispatch(queueNotification({ message: 'Please fill in all fields', type: 'error' }));
+      return;
+    }
+
+    if (!userId) {
+      dispatch(queueNotification({ message: 'User not identified', type: 'error' }));
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const category = quickAddModal.type || 'note';
+
+      // Use the robust updateSnippetRealtime instead of createSnippet
+      const response = await updateSnippetRealtime({
+        snippet_id: null as any, // null indicates creation
+        key: title.trim(),
+        value: activeContent.trim(),
+        category: category as any,
+        workspace_id: selectedLocation.workspaceId,
+        folder_id: selectedLocation.folderId || null,
+        tags: [],
+      });
+
+      if (response?.snippet) {
+        const newSnippet = response.snippet;
+        const newId = newSnippet.id || newSnippet.snippet_id || `temp-${Date.now()}`;
+
+        // Resolve correct teamId for the destination workspace
+        let targetTeamId = selectedTeam?.team_id || (selectedLocation.isPersonal ? 'personal' : '');
+        if (allTeams && selectedLocation.workspaceId) {
+          const foundTeam = allTeams.find((t: any) => (t.workspaces || []).some((w: any) => w.workspace_id === selectedLocation.workspaceId));
+          if (foundTeam) {
+            targetTeamId = foundTeam.team_id;
+          }
+        }
+
+        // 1. Optimistic Redux Update
+        dispatch(
+          optimisticAddSnippet({
+            teamId: targetTeamId,
+            workspaceId: selectedLocation.workspaceId,
+            folderId: selectedLocation.folderId || '',
+            snippet: {
+              ...newSnippet,
+              id: newId,
+            },
+          })
+        );
+
+        // 2. Favorite Sync
+        if (newId && isFav) {
+          try {
+            await addFavorite(userId, { id: newId }, 'snippet');
+          } catch (e) {
+            console.error('Favorite sync failed:', e);
+          }
+        }
+
+        // 4. Update Last Destination
+        const storageKey =
+          category === 'link'
+            ? 'lastLinkDestination'
+            : category === 'note'
+              ? 'lastNoteDestination'
+              : category === 'snippet'
+                ? 'lastSnippetDestination'
+                : 'lastPromptDestination';
+
+        await chrome.storage.local.set({
+          [storageKey]: {
+            workspace_id: selectedLocation.workspaceId,
+            folder_id: selectedLocation.folderId,
+            path: selectedLocation.path,
+          },
+        });
+
+        dispatch(queueNotification({ message: `New ${category} added successfully`, type: 'success' }));
+      }
+      
+      // Close the modal on success regardless of specific response structure
+      setQuickAddModal(null);
+    } catch (error) {
+      console.error('Quick add failed:', error);
+      dispatch(queueNotification({ message: 'Failed to add item', type: 'error' }));
+      setQuickAddModal(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!quickAddModal.isOpen) return null;
+
+  const isFormValid = title.trim() && (quickAddModal.type === 'link' || content.trim()) && selectedLocation;
+  const isSaveDisabled = isSaving || !isFormValid;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
+        <motion.div
+          ref={modalRef}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          data-ignore-grid-nav="true"
+          className={clsx(
+            "rounded-md shadow-2xl w-full max-w-lg overflow-visible border flex flex-col",
+            isDarkMode ? "bg-[#000000] border-white/10" : "bg-white border-slate-200"
+          )}
+          style={{ fontFamily: "'Inter', sans-serif" }}>
+          {/* Header - Slim & Precise */}
+          <div className={clsx(
+            "px-4 py-2 flex items-center justify-between border-b",
+            isDarkMode ? "border-white/10 bg-neutral-900/20" : "border-slate-100 bg-slate-50/30"
+          )}>
+            <h2 className={clsx("text-[11px] font-bold tracking-widest", isDarkMode ? "text-neutral-400" : "text-slate-500")}>
+              Quick Add{' '}
+              {quickAddModal.type === 'link'
+                ? 'Link'
+                : quickAddModal.type === 'note'
+                  ? 'Note'
+                  : quickAddModal.type === 'snippet'
+                    ? 'Snippet'
+                    : 'Prompt'}
+            </h2>
+              <button
+                onClick={() => setQuickAddModal(null)}
+                className={clsx(
+                  "p-1 rounded transition-all",
+                  isDarkMode ? "hover:bg-white/10 text-neutral-500 hover:text-neutral-300" : "hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                )}>
+                <FaTimes size={13} />
+              </button>
+          </div>
+
+          {/* Form - Vertical Split Rhythm */}
+          <div className={clsx("flex flex-col relative", "bg-[var(--color-containerBg)]")}>
+            {/* Title Row */}
+            <div className={clsx(
+              'flex items-stretch border-b transition-all relative', 
+              isDarkMode ? 'border-white/10' : 'border-slate-100',
+              ROW_HEIGHT
+            )}>
+              <div className={clsx(
+                "w-[45%] px-4 flex items-center border-r",
+                isDarkMode ? "border-white/10 bg-neutral-900/10" : "border-slate-100 bg-slate-50/20"
+              )}>
+                <span className={clsx(isDarkMode ? "text-neutral-400" : "text-slate-500", FONT_STYLE)}>Name</span>
+              </div>
+              <div className={clsx(
+                "w-[55%] flex items-center transition-all relative focus-within:ring-2 focus-within:ring-inset focus-within:z-[50] overflow-visible",
+                isDarkMode ? "focus-within:ring-white/20" : "focus-within:ring-blue-500"
+              )}>
+                <input
+                  ref={titleRef}
+                  autoFocus
+                  placeholder="Enter title..."
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className={clsx(
+                    'w-full h-full bg-transparent outline-none px-3',
+                    isDarkMode ? 'text-white placeholder:text-neutral-600' : 'text-slate-700 placeholder:text-slate-300',
+                    FONT_STYLE,
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Content Row (URL / Description) */}
+            <div
+              className={clsx(
+                'flex items-stretch border-b transition-all relative',
+                isDarkMode ? 'border-white/10' : 'border-slate-100',
+                quickAddModal.type === 'link' ? ROW_HEIGHT : NOTE_DESCRIPTION_ROW_HEIGHT,
+              )}>
+              <div className={clsx(
+                "w-[45%] px-4 flex items-center border-r",
+                isDarkMode ? "border-white/10 bg-neutral-900/10" : "border-slate-100 bg-slate-50/20"
+              )}>
+                <span className={clsx(isDarkMode ? "text-neutral-400" : "text-slate-500", FONT_STYLE)}>
+                  {quickAddModal.type === 'link'
+                    ? 'Links'
+                    : quickAddModal.type === 'note'
+                      ? 'Description'
+                      : quickAddModal.type === 'snippet'
+                        ? 'Snippet Content'
+                        : 'Prompt Text'}
+                </span>
+              </div>
+              <div className={clsx(
+                "w-[55%] flex flex-col transition-all relative focus-within:ring-2 focus-within:ring-inset focus-within:z-[50]",
+                isDarkMode ? "focus-within:ring-white/20" : "focus-within:ring-blue-500",
+                quickAddModal.type === 'link' ? "min-h-[44px]" : "min-h-[140px]"
+              )}>
+                {quickAddModal.type === 'link' ? (
+                  <div
+                    ref={linkDisplayRef}
+                    className="w-full h-full flex items-center pr-2"
+                    tabIndex={!isEditingLinks ? 0 : -1}
+                    onFocus={() => {
+                      if (!isEditingLinks) setIsEditingLinks(false);
+                    }}
+                    onClick={() => setIsEditingLinks(true)}>
+                    {isEditingLinks ? (
+                      <GridMultiLinkInput
+                        initialUrls={parseInitialLinkUrls(content)}
+                        suggestionPlacement="bottom"
+                        onSave={val => {
+                          setContent(val);
+                          setIsEditingLinks(false);
+                          setTimeout(() => linkDisplayRef.current?.focus(), 0);
+                        }}
+                        onCancel={() => {
+                          setIsEditingLinks(false);
+                          setTimeout(() => linkDisplayRef.current?.focus(), 0);
+                        }}
+                      />
+                    ) : (
+                      <div className={clsx(
+                        "px-3 py-2 text-[10px] w-full flex items-center gap-1 cursor-pointer transition-colors h-full",
+                        isDarkMode ? "hover:bg-white/10" : "hover:bg-slate-50"
+                      )}>
+                        {content ? (
+                          <div className={clsx("flex items-center gap-1.5 w-full min-w-0", isDarkMode ? "text-neutral-200" : "text-slate-700")}>
+                            <FaGlobe className="text-[10px] text-blue-400 shrink-0" />
+                            <span className="truncate flex-1">{linkPreview.text}</span>
+                            {linkPreview.moreCount > 0 && (
+                              <span className={clsx(
+                                "ml-1 text-[9px] font-bold shrink-0 px-1.5 rounded whitespace-nowrap",
+                                isDarkMode ? "text-neutral-300 bg-white/10" : "text-neutral-500 bg-neutral-100"
+                              )}>
+                                +{linkPreview.moreCount} more
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-blue-400 font-medium italic">+ Add URL</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center w-full h-full p-2 relative">
+                    <textarea
+                      ref={contentRef}
+                      placeholder={
+                        quickAddModal.type === 'note' 
+                          ? 'Enter description...' 
+                          : quickAddModal.type === 'snippet'
+                            ? 'Enter snippet content...'
+                            : 'Enter prompt text...'
+                      }
+                      value={content}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setContent(val);
+                        const cursor = e.target.selectionStart;
+                        if (cursor > 0 && val[cursor - 1] === '@') {
+                          if (contentRef.current) {
+                            const rect = contentRef.current.getBoundingClientRect();
+                            setDropdownPosition({ top: rect.top + 35, left: rect.left + 25 });
+                            setIsVariableDropdownOpen(true);
+                            setVariableHighlightIndex(0);
+                          }
+                        } else if (isVariableDropdownOpen && (cursor === 0 || val[cursor - 1] !== '@')) {
+                          setIsVariableDropdownOpen(false);
+                        }
+                      }}
+                      onKeyDown={e => {
+                        if (isVariableDropdownOpen) {
+                          if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+                            return; // Let VariableDropdown handle it
+                          }
+                        }
+                      }}
+                      rows={5}
+                      className={clsx(
+                        'w-full h-full bg-transparent outline-none resize-none px-3 py-[10px]',
+                        isDarkMode ? 'text-white placeholder:text-neutral-600' : 'text-slate-700 placeholder:text-slate-300',
+                        FONT_STYLE,
+                      )}
+                      onInput={e => {
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        target.style.height = target.scrollHeight + 'px';
+                      }}
+                    />
+                    {isVariableDropdownOpen && dropdownPosition && createPortal(
+                      <VariableDropdown
+                        position={dropdownPosition}
+                        onSelect={handleVariableSelect}
+                        onClose={() => setIsVariableDropdownOpen(false)}
+                        highlightIndex={variableHighlightIndex}
+                        setHighlightIndex={setVariableHighlightIndex}
+                      />,
+                      document.body
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Folder Selection Row */}
+            <div className={clsx(
+              'flex items-stretch border-b transition-all relative',
+              isDarkMode ? 'border-white/10' : 'border-slate-100',
+              ROW_HEIGHT
+            )}>
+              <div className={clsx(
+                "w-[45%] px-4 flex items-center border-r",
+                isDarkMode ? "border-white/10 bg-neutral-900/10" : "border-slate-100 bg-slate-50/20"
+              )}>
+                <span className={clsx(isDarkMode ? "text-neutral-400" : "text-slate-500", FONT_STYLE)}>Destination</span>
+              </div>
+              <div className={clsx(
+                "w-[55%] relative flex items-center transition-all focus-within:ring-2 focus-within:ring-inset focus-within:z-[50]",
+                isDarkMode ? "focus-within:ring-white/20" : "focus-within:ring-blue-500"
+              )}>
+                <button
+                  ref={folderBtnRef}
+                  onClick={() => setIsPickerOpen(!isPickerOpen)}
+                  className="flex items-center gap-2 w-full h-full group text-left outline-none hover:text-blue-500 transition-colors px-3">
+                  {selectedLocation?.path ? (
+                    <>
+                      <span className="shrink-0 group-hover:text-blue-400">
+                        {selectedLocation.visibilityType === 'lock' && (
+                          <MdLockOutline size={11} className="text-[var(--color-iconDefault)]" />
+                        )}
+                        {selectedLocation.visibilityType === 'globe' && (
+                          <FiGlobe size={11} className="text-[var(--color-iconDefault)]" />
+                        )}
+                        {selectedLocation.visibilityType === 'users' && (
+                          <BsPeopleFill size={11} className="text-[var(--color-iconDefault)]" />
+                        )}
+                        {selectedLocation.visibilityType === 'personal' && (
+                          <BsPersonFill size={11} className="text-[var(--color-iconDefault)]" />
+                        )}
+                      </span>
+                      <span className={clsx('truncate whitespace-nowrap', isDarkMode ? "text-neutral-200" : "text-slate-700", FONT_STYLE)}>
+                        {selectedLocation.path}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-blue-400/70 font-medium italic text-[10px] pl-2 hover:text-blue-500 transition-colors flex items-center gap-1">
+                      + Select destination
+                    </span>
+                  )}
+                  <FaChevronDown size={8} className="ml-auto text-[var(--color-iconDefault)]" />
+                </button>
+
+                {isPickerOpen && (
+                  <div className="absolute bottom-full left-0 z-[110] mb-1">
+                    <SaveDestinationPicker
+                      team={orgTeam}
+                      personalWorkspaces={personalWorkspaces}
+                      currentSelection={{
+                        workspaceId: selectedLocation?.workspaceId,
+                        folderId: selectedLocation?.folderId,
+                      }}
+                      onSelectWorkspace={(ws, isP) => {
+                        const wsIcon = resolveIcon(ws.icon, '📁');
+                        setSelectedLocation({
+                          workspaceId: ws.workspace_id,
+                          path: `${wsIcon} ${ws.workspace_name}`,
+                          isPersonal: !!isP,
+                          visibilityType: isP ? 'personal' : 'globe',
+                        });
+                        setIsPickerOpen(false);
+                      }}
+                      onSelectFolder={(ws, folder, isP, path) => {
+                        const wsIcon = resolveIcon(ws.icon, '📁');
+                        const fIcon = resolveIcon(folder.icon, '📂');
+                        const fullPath =
+                          (path || []).map(f => `${resolveIcon(f.icon, '📂')} ${f.folder_name}`).join(' / ') ||
+                          `${fIcon} ${folder.folder_name}`;
+
+                        setSelectedLocation({
+                          workspaceId: ws.workspace_id,
+                          folderId: folder.folder_id,
+                          path: `${wsIcon} ${ws.workspace_name} / ${fullPath}`,
+                          isPersonal: !!isP,
+                          visibilityType: isP ? 'personal' : 'globe',
+                        });
+                        setIsPickerOpen(false);
+                      }}
+                      onClose={() => setIsPickerOpen(false)}
+                      className="!w-full max-h-64"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className={clsx(
+            "px-4 py-3 border-t flex items-center justify-between gap-3 overflow-hidden",
+            isDarkMode ? "bg-neutral-900/20 border-white/10" : "bg-slate-50/30 border-slate-100"
+          )}>
+            {/* Left: Back Button */}
+            <div className="flex items-center">
+              <button
+                onClick={() => setQuickAddModal(null)}
+                className={clsx(
+                  "flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors text-[10px] font-bold",
+                  isDarkMode ? "hover:bg-white/10 text-[var(--color-iconDefault)]" : "hover:bg-neutral-100 text-neutral-500"
+                )}>
+                <span>Back</span>
+                <span className={clsx(
+                  "flex items-center rounded border px-1 py-0 text-[8px] font-bold",
+                  isDarkMode ? "border-neutral-700 bg-neutral-800 text-neutral-500" : "border-neutral-200 bg-white text-[var(--color-iconDefault)]"
+                )}>
+                  Esc
+                </span>
+              </button>
+            </div>
+
+            {/* Right: Save Button */}
+            <div className="flex items-center gap-3">
+              <button
+                ref={saveBtnRef}
+                onClick={() => handleSave()}
+                disabled={isSaveDisabled}
+                className={clsx(
+                  'flex items-center gap-2 rounded-md border px-2 py-1 text-[10px] font-semibold shadow-sm transition-all active:scale-95',
+                  isSaveDisabled
+                    ? (isDarkMode ? 'border-neutral-800 bg-neutral-900 text-neutral-600' : 'border-neutral-200 bg-neutral-100 text-neutral-400')
+                    : (isDarkMode 
+                        ? 'border-neutral-600 bg-neutral-700 text-white hover:bg-neutral-600' 
+                        : 'border-neutral-300 bg-neutral-100 text-neutral-700 hover:bg-neutral-200')
+                )}>
+                <span>{isSaving ? 'Saving...' : 'Save'}</span>
+                <span className="flex items-center gap-0.5 text-[8px] font-semibold opacity-60">
+                  <span className={clsx("rounded border px-0.5", isDarkMode ? "border-white/10 bg-white/5" : "border-white/80 bg-white")}>{isMac ? '⌘' : 'Ctrl'}</span>
+                  <span>+</span>
+                  <span className={clsx("rounded border px-0.5", isDarkMode ? "border-white/10 bg-white/5" : "border-white/80 bg-white")}>Enter</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
+
+export default GridQuickAddModal;

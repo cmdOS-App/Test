@@ -1,0 +1,324 @@
+w.ql-container {
+  border: none !important;
+}
+
+/* Prevent Quill's invisible clipboard element from intercepting mouse events */
+.ql-clipboard {
+  pointer-events: none !important;
+}
+
+.ql-toolbar {
+  border: none !important;
+  background: transparent !important;
+}
+
+.ql-editor::before {
+  color: #888;
+  font-style: italic;
+  opacity: 0.6;
+  left: 0 !important;
+}
+
+.dark .ql-editor::before {
+  color: #ccc !important;
+}
+
+/* Tiptap Placeholder matching Quill */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #888;
+  font-style: italic;
+  opacity: 0.6;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.dark .ProseMirror p.is-editor-empty:first-child::before {
+  color: #ccc !important;
+}
+
+.ql-editor {
+  background: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  font-size: 1rem;
+  line-height: 1.5;
+  padding: 15px 0 !important;
+}
+
+/* Ensure text color is visible in both light and dark modes */
+.ql-editor,
+.ql-editor p,
+.ql-editor div,
+.ql-editor span {
+  color: inherit !important;
+}
+
+.dark .ql-editor,
+.dark .ql-editor p,
+.dark .ql-editor div,
+.dark .ql-editor span {
+  color: rgb(255, 255, 255) !important;
+}
+
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6 {
+  color: inherit !important;
+  background: transparent !important;
+  font-weight: bold;
+}
+
+.ql-container {
+  position: relative;
+  /* overflow: visible; */
+  /* Ensure popups are visible */
+}
+
+.ql-tooltip {
+  max-width: 90vw;
+  z-index: 9999;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  background-color: #f9f9f9;
+  color: #111;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode override */
+.dark .ql-tooltip {
+  background-color: #1f2937 !important;
+  /* Tailwind's gray-800 */
+  color: #f3f4f6 !important;
+  /* Tailwind's gray-100 */
+  border-color: #374151 !important;
+  /* Tailwind's gray-700 */
+}
+
+.ql-tooltip input {
+  background-color: white;
+  color: black;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #ccc;
+}
+
+/* Dark mode tooltip input */
+.dark .ql-tooltip input {
+  background-color: #111827;
+  /* Tailwind's gray-900 */
+  color: #f9fafb;
+  /* Tailwind's gray-100 */
+  border-color: #4b5563;
+  /* Tailwind's gray-600 */
+}
+
+.editor-wrapper,
+/* Or whatever your container class is */
+.ql-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Dark mode override */
+.dark .ql-tooltip[data-mode='link'] {
+  background-color: #1f2937 !important;
+  /* Tailwind gray-800 */
+  color: #f3f4f6 !important;
+  /* Tailwind gray-100 */
+}
+
+/* Target dropdowns like "Heading 1", "Normal", etc. */
+.dark .ql-snow .ql-picker {
+  color: #e5e7eb;
+  /* Tailwind gray-200 */
+}
+
+/* Dropdown label (e.g., "Heading 1" visible before clicking) */
+.dark .ql-snow .ql-picker-label {
+  background-color: #1f2937 !important;
+  /* Tailwind gray-800 */
+  color: #f9fafb !important;
+  /* Tailwind gray-100 */
+  border: 1px solid #374151 !important;
+  /* Tailwind gray-700 */
+}
+
+/* Dropdown menu container */
+.dark .ql-snow .ql-picker-options {
+  background-color: #1f2937 !important;
+  /* dark bg */
+  color: #f9fafb !important;
+  border: 1px solid #374151 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Individual dropdown options */
+.dark .ql-snow .ql-picker-item {
+  color: #f9fafb !important;
+}
+
+.dark .ql-snow .ql-picker-item:hover {
+  background-color: #374151 !important;
+  /* hover bg */
+}
+
+/* Ensure editor wrapper doesn't clip dropdowns */
+.editor-wrapper,
+.ql-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Quill dropdowns - ensure they appear above everything */
+.ql-snow .ql-picker-options {
+  position: absolute !important;
+  z-index: 9999 !important;
+}
+
+.alts-ql-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 1rem;
+}
+
+.alts-ql-wrapper .ql-toolbar {
+  display: flex !important;
+  justify-content: flex-end;
+  align-items: center;
+  background: transparent !important;
+  border: none !important;
+  padding: 0.5rem 0.75rem 0.15rem !important;
+}
+
+.alts-ql-wrapper .ql-toolbar .ql-formats {
+  margin-right: 0 !important;
+}
+
+.alts-ql-wrapper .ql-container {
+  border: none !important;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.alts-ql-wrapper .ql-editor {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  padding: 0.1rem 0.75rem 0.75rem !important;
+}
+
+/* Custom wrapper for internal toolbar scenarios (like RichEditor) */
+.quill-wrapper-internal .ql-toolbar {
+  display: flex !important;
+  justify-content: flex-end;
+  border: none !important;
+  padding: 8px !important;
+  flex: 0 0 auto !important;
+  /* Fixed toolbar height */
+}
+
+.dark .quill-wrapper-internal .ql-toolbar {
+  border: none !important;
+}
+
+/* FINAL RELIABLE LAYOUT FIX */
+/* 1. Wrapper: Strict 100% height to match parent. Flex Column. Hidden Overflow. */
+.quill-wrapper-internal {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  /* Match the strict parent height from RichEditor.tsx */
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 2. Container: Flex Grow 1 to fill remaining space (after toolbar). */
+/*    overflow-y: scroll forces the scrollbar track to always be visible. */
+.quill-wrapper-internal .ql-container {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 0 !important; /* Force flex-basis to 0 so it doesn't grow based on content before flex kicks in */
+  overflow-y: auto !important;
+  position: relative !important;
+  width: 100% !important;
+  border: none !important;
+}
+
+/* CUSTOM SCROLLBAR for Quill Editor Container */
+.quill-wrapper-internal .ql-container::-webkit-scrollbar {
+  width: 10px;
+  /* Wide enough to see clearly */
+  height: 10px;
+  display: block !important;
+}
+
+.quill-wrapper-internal .ql-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Light mode thumb - High Contrast */
+.quill-wrapper-internal .ql-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.4);
+  /* Visible gray/black */
+  border-radius: 5px;
+  border: 2px solid transparent;
+  /* Padding around thumb */
+  background-clip: content-box;
+}
+
+.quill-wrapper-internal .ql-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Dark mode thumb - High Contrast */
+.dark .quill-wrapper-internal .ql-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.4);
+  /* Visible white */
+}
+
+.dark .quill-wrapper-internal .ql-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.quill-wrapper-internal .ql-editor {
+  /* Let editor grow freely within the scrolling container */
+  min-height: 100% !important;
+  height: auto !important;
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+}
+
+/* Hide toolbar when toggle is off */
+.quill-wrapper-internal.toolbar-hidden .ql-toolbar {
+  display: none !important;
+}
+
+/* Legacy focus-mode overrides removed to allow proper flexbox layout control */
+/* .quill-wrapper-internal.focus-mode .ql-editor { ... } */
+/* .focus-mode-title-input { ... } */
+/* .quill-wrapper-internal.focus-mode .ql-editor.ql-blank::before { ... } */
+/* .quill-wrapper-internal.focus-mode::after { ... } */
+
+
+/* Bottom toolbar styling */
+.quill-toolbar-bottom {
+  display: flex !important;
+  flex-direction: column-reverse !important;
+}
+
+.quill-toolbar-bottom .ql-toolbar {
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  justify-content: flex-start !important;
+}
+
+.quill-toolbar-bottom .ql-container {
+  border-bottom: none !important;
+}

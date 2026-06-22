@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="300" height="300">
+  <defs>
+    <filter id="highExposureGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1.5 0" result="intenseBlur" />
+      <feMerge>
+        <feMergeNode in="intenseBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <path 
+    d="M60 10 L35 50 L55 50 L40 90 L75 40 L50 40 Z" 
+    fill="#d0c4ff" 
+    filter="url(#highExposureGlow)"
+    stroke="#ffffff"
+    stroke-width="0.8"
+    stroke-linejoin="round"
+  />
+</svg>

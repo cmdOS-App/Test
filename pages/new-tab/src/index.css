@@ -1,0 +1,498 @@
+@import url('./default-visible-scrollbar.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-appBg: #000000;
+  --color-rootBg: #000000;
+  --color-sidebarBg: #080808;
+  --color-panelBg: rgba(12, 12, 12, 0.32);
+  --color-editorBg: #171821;
+  --color-sheetBg: #171821;
+  --color-contextMenuBg: #080808;
+  --color-backdrop: blur(12px);
+  --color-tutorialCardBg: #171821;
+  --color-iconDefault: #9CA3AF;
+}
+
+/* Apply backdrop filter automatically to all themed popups, context menus, and search input wrappers */
+.bg-\[var\(--color-popupBg\)\],
+.bg-\[var\(--color-contextMenuBg\)\],
+.bg-\[var\(--color-modalBg\)\],
+.bg-\[var\(--color-sidebarBg\)\],
+.bg-\[var\(--color-containerBg\)\],
+.bg-\[var\(--color-cardBg\)\],
+#sheet-search-wrapper {
+  backdrop-filter: var(--color-backdrop) !important;
+  -webkit-backdrop-filter: var(--color-backdrop) !important;
+}
+
+/* Ensure transparent background for body/html to show desktop behind - matching AltS */
+html,
+body {
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+html.dark,
+html.dark body {
+  background: var(--color-rootBg) !important;
+}
+
+#app-container {
+  background: transparent !important;
+  width: 100%;
+  height: 100%;
+  border-radius: 0px;
+}
+
+.bg-homepage-light {
+  background: linear-gradient(180deg, #E0E4E8 0%, #C0C4C8 100%) !important;
+  position: relative;
+}
+
+.bg-homepage-light::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.05;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.dark .bg-homepage-light::before {
+  display: none !important;
+}
+
+.dark .bg-homepage-light {
+  background: transparent !important;
+}
+
+/* Custom scrollbar styles to match AltS */
+.hide-scrollbar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: transparent transparent;
+  /* Firefox */
+}
+
+.custom-scrollbar:hover {
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 2px !important;
+  height: 4px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent !important;
+  border-radius: 20px !important;
+  border: 1px solid transparent !important;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(80, 80, 80, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(31, 30, 30) !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(200, 200, 200, 0.4) !important;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(200, 200, 200, 0.6) !important;
+  }
+}
+
+/* Ensure scrollbar works on dark backgrounds (Manual Toggle) */
+.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(52, 52, 52, 0.4) !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(52, 52, 52, 0.6) !important;
+}
+
+/* Ensure scrollbar works on dark backgrounds */
+.custom-scrollbar.dark-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(200, 200, 200, 0.4) !important;
+}
+
+/* Visible Scrollbar (Always visible, not just on hover) */
+.visible-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.visible-scrollbar::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+  display: block !important;
+}
+
+.visible-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.visible-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(150, 150, 150, 0.5) !important;
+  border-radius: 20px !important;
+  border: 1px solid transparent !important;
+}
+
+.visible-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(80, 80, 80, 0.8) !important;
+}
+
+.dark .visible-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(200, 200, 200, 0.4) !important;
+}
+
+.dark .visible-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(200, 200, 200, 0.6) !important;
+}
+
+.custom-scrollbar.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(200, 200, 200, 0.6) !important;
+}
+
+/* Custom scrollbar for BoardView (always visible, thin, matching cmdOS dark theme) */
+.board-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.05) !important;
+}
+
+.board-scrollbar::-webkit-scrollbar {
+  width: 5px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.board-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px !important;
+}
+
+.board-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 10px !important;
+}
+
+.board-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+
+
+
+/* ============================================
+   Animated Gradient Border for Searchbar
+   Creates a "comet sweep" effect where colors
+   travel around the border perimeter once
+   and then fade out gracefully
+   ============================================ */
+
+/* CSS Custom Property for gradient animation */
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --comet-opacity {
+  syntax: '<number>';
+  initial-value: 1;
+  inherits: false;
+}
+
+/* Searchbar container with animated gradient border */
+.searchbar-glow-container {
+  position: relative;
+  border-radius: 0.75rem 0.75rem 0 0;
+  /* rounded-t-xl */
+  isolation: isolate;
+}
+
+/* Card container with static blue border and glow */
+.card-glow-container {
+  position: relative;
+  border-radius: 0.75rem;
+  /* rounded-xl */
+  isolation: isolate;
+  border: 1.5px solid #3B66AE;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 15px rgba(59, 102, 174, 0.4), inset 0 0 10px rgba(59, 102, 174, 0.1);
+}
+
+.dark .card-glow-container {
+  background: rgba(23, 23, 23, 0.2);
+  border-color: #3B66AE;
+  box-shadow: 0 0 20px rgba(59, 102, 174, 0.5), inset 0 0 15px rgba(59, 102, 174, 0.2);
+}
+
+/* Removed animated pseudo-elements as requested */
+/* Comet sweep border - concentrated gradient that travels around */
+.searchbar-glow-container::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  /* Comet gradient: wider arc for smoother travel */
+  background: conic-gradient(from var(--gradient-angle),
+      transparent 0%,
+      transparent 50%,
+      #6366f150 55%,
+      #6366f1d9 60%,
+      #8b5cf6d9 70%,
+      #a855f7e6 80%,
+      #d946efe6 85%,
+      #a855f7d9 90%,
+      #8b5cf6b3 95%,
+      #6366f150 98%,
+      transparent 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+  opacity: var(--comet-opacity);
+  animation:
+    comet-sweep 1.5s linear forwards,
+    comet-fade 1.5s ease-out forwards;
+}
+
+/* Glow effect - blurred comet trail */
+.searchbar-glow-container::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--gradient-angle),
+      transparent 0%,
+      transparent 55%,
+      #6366f180 60%,
+      #8b5cf699 70%,
+      #a855f799 80%,
+      #d946ef80 85%,
+      #a855f799 90%,
+      #6366f180 96%,
+      transparent 100%);
+  filter: blur(6px);
+  z-index: -2;
+  opacity: var(--comet-opacity);
+  animation:
+    comet-sweep 1.5s linear forwards,
+    comet-fade 1.5s ease-out forwards;
+}
+
+/* Comet sweep animation - half rotation (reversed direction) */
+@keyframes comet-sweep {
+  0% {
+    --gradient-angle: 180deg;
+  }
+
+  100% {
+    --gradient-angle: 0deg;
+  }
+}
+
+/* Comet fade animation - quick fade-in, visible during sweep, fades at end */
+@keyframes comet-fade {
+  0% {
+    --comet-opacity: 0;
+  }
+
+  8% {
+    --comet-opacity: 1;
+  }
+
+  80% {
+    --comet-opacity: 1;
+  }
+
+  100% {
+    --comet-opacity: 0;
+  }
+}
+
+/* Ensure no residual styling after animation completes */
+.searchbar-glow-container.animation-complete::before,
+.searchbar-glow-container.animation-complete::after {
+  display: none;
+}
+
+/* ============================================
+   EMOJI PICKER SPECIFIC STYLES
+   ============================================ */
+
+/* Continuous Animation Modifier (for Emoji Picker) - 2 runs then disappear */
+.searchbar-glow-container.glow-continuous::before,
+.searchbar-glow-container.glow-continuous::after {
+  animation:
+    comet-spin-continuous 2s linear 2 forwards,
+    comet-fade-out 0.5s ease-out 6s forwards;
+  opacity: 1;
+}
+
+/* Tighten the glow for small elements */
+.searchbar-glow-container.glow-continuous::after {
+  inset: -2px;
+  padding: 2px;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  filter: blur(2.5px);
+}
+
+@keyframes comet-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes comet-spin-continuous {
+  from {
+    --gradient-angle: 0deg;
+  }
+
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+/* Hover-only scrollbar logic for Sidebar */
+.hover-only-scrollbar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE */
+}
+
+.hover-only-scrollbar::-webkit-scrollbar {
+  width: 3px;
+
+  height: 10px;
+}
+
+/* Show on group hover (Sidebar hover) */
+.group\/sidebar-scroll:hover .hover-only-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.group\/sidebar-scroll:hover .hover-only-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  background: transparent !important;
+}
+
+.group\/sidebar-scroll:hover .hover-only-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 10px;
+}
+
+/* On hover of the actual scrollbar area, show a subtle track background */
+.group\/sidebar-scroll .hover-only-scrollbar::-webkit-scrollbar-track:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark .group\/sidebar-scroll .hover-only-scrollbar::-webkit-scrollbar-track:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Ensure thumb styles are applied when visible - BRIGHT per Image 1 on hover */
+.group\/sidebar-scroll:hover .hover-only-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(180, 180, 180, 0.9) !important;
+  /* Bright per Image 1 */
+  border-radius: 20px !important;
+  border: 1px solid transparent !important;
+}
+
+.group\/sidebar-scroll:hover .hover-only-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(200, 200, 200, 1) !important;
+}
+
+/* Dark mode thumb refinements */
+.dark .group\/sidebar-scroll:hover .hover-only-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(220, 220, 220, 0.6) !important;
+}
+
+.dark .group\/sidebar-scroll:hover .hover-only-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* ============================================
+   FadeIn Animation for Sidebar Login Prompt
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.footer-indications {
+  opacity: 0 !important;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+html.is-searchbar-focused .footer-indications {
+  opacity: 1 !important;
+  pointer-events: auto;
+}

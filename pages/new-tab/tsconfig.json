@@ -1,0 +1,19 @@
+{
+  "extends": "@extension/tsconfig/base",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@src/*": ["src/*"],
+      "@private-features/*": [
+        "src/components/OrganizationPanel/*",
+        "src/components/OrganizationPanel/private-mocks/*"
+      ],
+      "@private-providers/*": ["../Apis/storage/providers/*"],
+      "@private-services/*": ["../Apis/services/*"]
+    },
+    "types": ["chrome", "node"],
+    "jsx": "react-jsx",
+    "esModuleInterop": true
+  },
+  "include": ["src", "vite.config.mts"]
+}

@@ -1,0 +1,12 @@
+{
+  "extends": "@extension/tsconfig/app",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@src/*": ["src/*"],
+      "@private-providers/*": ["../pages/Apis/storage/providers/*"],
+      "@private-services/*": ["../pages/Apis/services/*"]
+    }
+  },
+  "include": ["src", "utils", "vite.config.mts", "manifest.ts", "../node_modules/@types"]
+}

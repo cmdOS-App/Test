@@ -1,0 +1,490 @@
+import type Clipboard from 'quill/modules/clipboard';
+
+interface QuillSetupOptions {
+  placeholder?: string;
+  readOnly?: boolean;
+  onChange: (html: string) => void;
+  onKeyUpdate?: (newKey: string) => void;
+  onAtTrigger?: (position: { top: number; left: number }) => void;
+  onUpArrowAtStart?: () => void;
+  onCreateNew?: () => void;
+  ref?: any;
+  quillInstanceRef: React.RefObject<any>;
+  toolbarSelector?: string;
+  onDelete?: () => void;
+}
+
+export const setupQuill = async (
+  container: HTMLDivElement,
+  initialValue: string,
+  {
+    placeholder,
+    readOnly,
+    onChange,
+    onKeyUpdate,
+    onAtTrigger,
+    onUpArrowAtStart,
+    onCreateNew,
+    ref,
+    quillInstanceRef,
+    toolbarSelector,
+    onDelete,
+  }: QuillSetupOptions,
+) => {
+  const { default: Quill } = await import('quill');
+
+  const BaseClipboard = Quill.import('modules/clipboard') as typeof Clipboard;
+
+  class CleanClipboard extends BaseClipboard {
+    convert(input: { html?: string; text?: string }, formats?: Record<string, unknown>) {
+      const html = input.html || '';
+
+      const div = document.createElement('div');
+      div.innerHTML = html;
+
+      div.querySelectorAll('*').forEach(node => {
+        const el = node as HTMLElement;
+
+        // Remove all <img> tags to block image pasting
+        if (el.tagName === 'IMG') {
+          el.remove();
+          return;
+        }
+
+        // Strip specific inline styles
+        el.style.backgroundColor = '';
+        el.style.background = '';
+        el.style.color = '';
+
+        // Clean background and color from style attribute string
+        const style = el.getAttribute('style');
+        if (style) {
+          const cleanedStyle = style
+            .split(';')
+            .filter(rule => {
+              const trimmed = rule.trim().toLowerCase();
+              return !trimmed.startsWith('background') && !trimmed.startsWith('color');
+            })
+            .join(';');
+          el.setAttribute('style', cleanedStyle);
+        }
+      });
+
+      return super.convert({ html: div.innerHTML, text: input.text }, formats);
+    }
+  }
+
+  Quill.register('modules/clipboard', CleanClipboard, true);
+  const Link = Quill.import('formats/link') as {
+    new (): any;
+    sanitize: (url: string) => string;
+  };
+
+  // Optional: Patch Link to auto-prepend protocol if missing
+  Link.sanitize = (url: string) => {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url)) return url;
+    // If no protocol, add https://
+    return 'https://' + url;
+  };
+
+  Quill.register('formats/link', Link, true);
+
+  // Inject strict CSS overrides to fix native Quill blue theme and padding
+  if (!document.getElementById('quill-custom-toolbar-styles')) {
+    const style = document.createElement('style');
+    style.id = 'quill-custom-toolbar-styles';
+    style.innerHTML = `
+      /* Default state - Light Mode */
+      .ql-snow.ql-toolbar button .ql-stroke,
+      .ql-snow .ql-toolbar button .ql-stroke-miter {
+        stroke: #6b7280 !important;
+      }
+      .ql-snow.ql-toolbar button .ql-fill {
+        fill: #6b7280 !important;
+      }
+      
+      /* Default state - Dark Mode (Brighter gray for perfect visibility) */
+      .dark .ql-snow.ql-toolbar button .ql-stroke,
+      .dark .ql-snow .ql-toolbar button .ql-stroke-miter {
+        stroke: #d1d5db !important;
+      }
+      .dark .ql-snow.ql-toolbar button .ql-fill {
+        fill: #d1d5db !important;
+      }
+
+      /* Active State */
+      .ql-snow.ql-toolbar button.ql-active,
+      .ql-snow .ql-toolbar button.ql-active {
+        color: #ffffff !important;
+      }
+      .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+      .ql-snow .ql-toolbar button.ql-active .ql-stroke-miter {
+        stroke: #ffffff !important;
+      }
+      .ql-snow.ql-toolbar button.ql-active .ql-fill {
+        fill: #ffffff !important;
+      }
+      .ql-snow.ql-toolbar button:hover .ql-stroke,
+      .ql-snow .ql-toolbar button:hover .ql-stroke-miter {
+        stroke: #e5e5e5 !important;
+      }
+      .ql-snow.ql-toolbar button:hover .ql-fill {
+        fill: #e5e5e5 !important;
+      }
+      .ql-snow.ql-toolbar button svg {
+        float: none !important;
+        display: block !important;
+        margin: 0 auto !important;
+      }
+      .ql-snow.ql-toolbar .ql-formats {
+        margin-right: 4px !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const editorEl = document.createElement('div');
+  // editorEl becomes .ql-container after Quill init — CSS handles flex sizing
+  container.innerHTML = '';
+  container.appendChild(editorEl);
+
+  // Build toolbar HTML directly so ALL custom buttons are guaranteed to render
+  const toolbarEl = document.createElement('div');
+  toolbarEl.innerHTML = `
+
+    <span class="ql-formats">
+      <button class="ql-bold" title="Bold"></button>
+      <button class="ql-italic" title="Italic"></button>
+      <button class="ql-underline" title="Underline"></button>
+      <button class="ql-strike" title="Strikethrough"></button>
+    </span>
+    <span class="ql-formats">
+      <button class="ql-list" value="bullet" title="Bullet List"></button>
+    </span>
+  `;
+
+  const quill = new Quill(editorEl, {
+    theme: 'snow',
+    placeholder,
+    readOnly,
+    modules: {
+      toolbar: {
+        container: toolbarEl,
+        handlers: {},
+      },
+      history: {
+        delay: 1000,
+        maxStack: 100,
+        userOnly: true,
+      },
+      clipboard: {
+        matchVisual: false,
+      },
+    },
+  });
+
+
+
+  // Helper: apply clean styling to a toolbar element
+  const styleToolbar = (toolbar: HTMLElement) => {
+    toolbar.setAttribute('style', `
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 2px;
+      padding: 4px 8px;
+      border: none !important;
+      background: transparent;
+    `);
+
+    const groups = toolbar.querySelectorAll('.ql-formats');
+    groups.forEach((group: any, index: number) => {
+      group.style.display = 'flex';
+      group.style.alignItems = 'center';
+      group.style.gap = '2px';
+      group.style.margin = '0';
+      if (index < groups.length - 1) {
+        group.style.paddingRight = '8px';
+        group.style.marginRight = '4px';
+        group.style.borderRight = '1px solid rgba(150,150,150,0.2)';
+      }
+    });
+
+    toolbar.querySelectorAll('button').forEach((b: any) => {
+      b.style.cssText = `
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 6px !important;
+        padding: 0 !important;
+        border: none !important;
+        cursor: pointer;
+        background: transparent !important;
+        color: #a3a3a3;
+        transition: background 0.12s ease, color 0.12s ease;
+        flex-shrink: 0;
+      `;
+      b.addEventListener('mouseenter', () => {
+        b.style.setProperty('background', 'rgba(150,150,150,0.15)', 'important');
+        b.style.color = '#e5e5e5';
+      });
+      b.addEventListener('mouseleave', () => {
+        b.style.setProperty('background', 'transparent', 'important');
+        if (!b.classList.contains('ql-active')) {
+          b.style.color = '#a3a3a3';
+        } else {
+          b.style.color = '#ffffff';
+        }
+      });
+    });
+
+    toolbar.querySelectorAll('button svg').forEach((svg: any) => {
+      svg.setAttribute('width', '16');
+      svg.setAttribute('height', '16');
+    });
+  };
+
+  // toolbarEl IS the toolbar — Quill adds ql-toolbar class directly to it.
+  // Apply styles immediately (Quill has already processed it at this point).
+  styleToolbar(toolbarEl);
+
+  // Teleport toolbarEl into the toolbarSelector target.
+  // Use a retry loop because React may not have mounted the target div yet.
+  if (toolbarSelector) {
+    const attemptTeleport = (attemptsLeft: number) => {
+      const target = document.querySelector(toolbarSelector);
+      if (target) {
+        target.appendChild(toolbarEl);
+        // Re-apply styles after teleport
+        setTimeout(() => styleToolbar(toolbarEl), 10);
+      } else if (attemptsLeft > 0) {
+        setTimeout(() => attemptTeleport(attemptsLeft - 1), 50);
+      }
+    };
+    attemptTeleport(20); // Try up to 20 times = up to 1 second total
+  }
+
+
+  // Add keyboard binding for Up Arrow to navigate back to title
+  if (onUpArrowAtStart) {
+    quill.keyboard.addBinding({
+      key: 'ArrowUp',
+      handler: (range: any) => {
+        if (range.index === 0) {
+          onUpArrowAtStart();
+          return false; // Prevent extra cursor movement
+        }
+        return true;
+      },
+    });
+  }
+
+
+  quill.root.innerHTML = initialValue;
+  quill.root.style.background = 'transparent';
+  quill.root.style.color = 'inherit';
+
+  if (ref) ref.current = quill;
+  quillInstanceRef.current = quill;
+
+  const cleanupFns: Array<() => void> = [];
+
+  // Shared variable counter for auto-numbering custom variables
+  const varCounter = 1;
+
+  const handleTextChange = () => {
+    const html = quill.root.innerHTML;
+    onChange(html);
+
+    const text = quill.getText().trim();
+    if (text && onKeyUpdate) {
+      const suggestedKey = text.slice(0, 7).replace(/ /g, '_');
+      onKeyUpdate(suggestedKey);
+    }
+  };
+
+  quill.on('text-change', handleTextChange);
+  cleanupFns.push(() => quill.off('text-change', handleTextChange));
+
+  // @ key detection for variable dropdown trigger
+  // Allow @ to be typed, trigger dropdown after
+  if (onAtTrigger) {
+    let atTriggered = false;
+
+    const handleAtKeyUp = (event: KeyboardEvent) => {
+      // console.log('[QuillSetup] KeyUp:', event.key);
+      if (event.key === '@') {
+        
+        atTriggered = true;
+        // @ was just typed - trigger dropdown
+        const selection = quill.getSelection();
+        if (selection) {
+          const bounds = quill.getBounds(selection.index);
+          if (bounds) {
+            const editorRect = quill.root.getBoundingClientRect();
+            onAtTrigger({
+              top: editorRect.top + bounds.top + bounds.height,
+              left: editorRect.left + bounds.left,
+            });
+          }
+        }
+      }
+    };
+
+    // Close dropdown when user types after @
+    const handleTextChangeForAt = () => {
+      if (atTriggered) {
+        // User typed something after @ - close the dropdown
+        // This is handled by the parent component detecting content changes
+        atTriggered = false;
+      }
+    };
+
+    quill.root.addEventListener('keyup', handleAtKeyUp);
+    quill.on('text-change', handleTextChangeForAt);
+    cleanupFns.push(() => {
+      quill.root.removeEventListener('keyup', handleAtKeyUp);
+      quill.off('text-change', handleTextChangeForAt);
+    });
+  }
+
+  if (toolbarSelector) {
+    const toolbarEl = document.querySelector(toolbarSelector);
+    if (toolbarEl) {
+      let lastKnownRange = quill.getSelection();
+
+      const ensureRange = () => {
+        // Never steal focus away from the title input or any other text input/textarea
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+          return null;
+        }
+
+        let range = quill.getSelection();
+        if (!range && lastKnownRange) {
+          return null;
+        }
+        if (!range) {
+          return null;
+        }
+        if (!range) {
+          const len = quill.getLength();
+          range = { index: len, length: 0 };
+          // quill.setSelection(range.index, range.length || 0, 'user');
+        }
+        lastKnownRange = range;
+        return range;
+      };
+
+      const registerButton = (selector: string, handler: () => void) => {
+        const button = toolbarEl.querySelector(selector) as HTMLButtonElement | null;
+        if (!button) return;
+
+        const onMouseDown = (event: Event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          ensureRange();
+        };
+        const onClick = (event: Event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          handler();
+          updateActiveStates();
+        };
+
+        button.addEventListener('mousedown', onMouseDown);
+        button.addEventListener('click', onClick);
+        cleanupFns.push(() => {
+          button.removeEventListener('mousedown', onMouseDown);
+          button.removeEventListener('click', onClick);
+        });
+      };
+
+      const highlightColor = '#F8E68C';
+      const toggleHighlight = () => {
+        const range = ensureRange();
+        if (!range) return;
+        quill.setSelection(range.index, range.length || 0, 'user');
+        const current = quill.getFormat(range);
+        const isActive = current.background === highlightColor;
+        quill.format('background', isActive ? false : highlightColor, 'user');
+        lastKnownRange = quill.getSelection() || range;
+      };
+
+
+      const toggleList = (type: 'bullet' | 'ordered') => {
+        const range = ensureRange();
+        if (!range) return;
+        quill.setSelection(range.index, range.length || 0, 'user');
+        const current = quill.getFormat(range);
+        const isActive = current.list === type;
+        quill.format('list', isActive ? false : type, 'user');
+        lastKnownRange = quill.getSelection() || range;
+      };
+
+
+
+      // Keep custom buttons that are NOT handled by Quill natively
+      registerButton('.ql-custom-undo', () => { (quill as any).history?.undo(); });
+      registerButton('.ql-custom-redo', () => { (quill as any).history?.redo(); });
+      registerButton('.ql-custom-add', () => {
+        if (onCreateNew) onCreateNew();
+      });
+
+
+      const boldBtn = toolbarEl.querySelector('.ql-bold') as HTMLElement | null;
+      const italicBtn = toolbarEl.querySelector('.ql-italic') as HTMLElement | null;
+      const underlineBtn = toolbarEl.querySelector('.ql-underline') as HTMLElement | null;
+      const strikeBtn = toolbarEl.querySelector('.ql-strike') as HTMLElement | null;
+      const blockquoteBtn = toolbarEl.querySelector('.ql-blockquote') as HTMLElement | null;
+      const highlightBtn = toolbarEl.querySelector('.ql-background') as HTMLElement | null;
+      const bulletBtn = toolbarEl.querySelector('button.ql-list[value="bullet"]') as HTMLElement | null;
+      const orderedBtn = toolbarEl.querySelector('button.ql-list[value="ordered"]') as HTMLElement | null;
+      const linkBtn = toolbarEl.querySelector('.ql-link') as HTMLElement | null;
+
+      const setActive = (el: HTMLElement | null, active: boolean) => {
+        if (!el) return;
+        el.classList.toggle('ql-active', active);
+      };
+
+      const updateActiveStates = () => {
+        // Prevent getFormat() from stealing focus back when Quill loses focus
+        if (!quill.hasFocus()) return;
+        
+        const format = quill.getFormat();
+        setActive(boldBtn, Boolean(format.bold));
+        setActive(italicBtn, Boolean(format.italic));
+        setActive(underlineBtn, Boolean(format.underline));
+        setActive(strikeBtn, Boolean(format.strike));
+        setActive(blockquoteBtn, Boolean(format.blockquote));
+        setActive(highlightBtn, format.background === highlightColor);
+        setActive(bulletBtn, format.list === 'bullet');
+        setActive(orderedBtn, format.list === 'ordered');
+        setActive(linkBtn, Boolean(format.link));
+      };
+
+      const handleSelectionChange = (range: any) => {
+        if (range) {
+          lastKnownRange = range;
+        }
+        updateActiveStates();
+      };
+
+      quill.on('selection-change', handleSelectionChange);
+      quill.on('text-change', updateActiveStates);
+      cleanupFns.push(() => {
+        quill.off('selection-change', handleSelectionChange);
+        quill.off('text-change', updateActiveStates);
+      });
+
+      updateActiveStates();
+    }
+  }
+
+  return () => {
+    cleanupFns.forEach(fn => fn());
+  };
+};

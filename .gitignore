@@ -1,0 +1,54 @@
+# dependencies
+**/node_modules
+
+# testing
+**/coverage
+
+# build
+**/dist
+**/build
+**/dist-zip
+chrome-extension/manifest.js
+chrome-extension/pre-build.tsconfig.tsbuildinfo
+eslint.config.js
+tsconfig.tsbuildinfo
+
+# env
+**/.env.*
+**/.env
+
+# etc
+.DS_Store
+.idea
+**/.turbo
+
+# compiled
+**/tailwind-output.css
+
+# AI agent instruction and area guidance files (do not send to cloud)
+instructions/
+
+# Agents
+.agent/
+.agents/
+skills-lock.json
+
+package.json
+**/package.json
+
+docs/
+
+# Private SaaS Features & Providers (Do not push to public)
+pages/new-tab/src/components/OrganizationPanel/InviteMembersPopup.tsx
+pages/new-tab/src/components/OrganizationPanel/JoinLinksPanel.tsx
+pages/new-tab/src/components/OrganizationPanel/WorkspaceSharePanel.tsx
+pages/new-tab/src/components/OrganizationPanel/LoginButton.tsx
+pages/new-tab/src/components/OrganizationPanel/SaaSControls.tsx
+pages/Apis/storage/providers/CloudProvider.ts
+# OSS mode exclusions (private code)
+pages/Apis/storage/providers/private-mocks/
+pages/Apis/storage/providers/MigrationProvider.ts
+pages/Apis/storage/providers/LogoutProvider.ts
+
+
+

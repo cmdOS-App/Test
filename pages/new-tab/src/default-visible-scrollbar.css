@@ -1,0 +1,35 @@
+.default-visible-scrollbar {
+  scrollbar-width: thin;
+  /* Show thumb by default */
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+/* Ensure Webkit scrollbars also show thumb by default */
+.default-visible-scrollbar::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+  display: block !important;
+}
+
+.default-visible-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.default-visible-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(150, 150, 150, 0.5) !important;
+  border-radius: 20px !important;
+  border: 1px solid transparent !important;
+}
+
+.default-visible-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(80, 80, 80, 0.8) !important;
+}
+
+/* Dark mode adjustments */
+.dark .default-visible-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(200, 200, 200, 0.4) !important;
+}
+
+.dark .default-visible-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(200, 200, 200, 0.6) !important;
+}

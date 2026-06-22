@@ -1,0 +1,13 @@
+{
+  "extends": "@extension/tsconfig/base",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@src/*": ["src/*", "../new-tab/src/*"],
+      "@private-providers/*": ["../Apis/storage/providers/*", "../Apis/storage/providers/private-mocks/*"],
+      "@private-services/*": ["../Apis/services/*"]
+    },
+    "types": ["chrome", "node"]
+  },
+  "include": ["src", "vite.config.mts"]
+}

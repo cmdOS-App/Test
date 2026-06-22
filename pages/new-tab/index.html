@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>New Tab</title>
+  <meta name="color-scheme" content="dark light">
+
+  <!-- Gate script runs FIRST to decide: redirect or apply theme -->
+
+  <script type="module" src="./src/theme-gate.ts"></script>
+
+
+</head>
+
+<body>
+  <div id="app-container"></div>
+  <!-- React bundle - renders into hidden body, gate.ts shows it if enabled -->
+  <script type="module" src="./src/index.tsx"></script>
+</body>
+
+</html>
