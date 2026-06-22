@@ -36,7 +36,7 @@ const manifest = {
   description: '__MSG_extensionDescription__',
   host_permissions: [
     'https://www.cmdos.app/*',
-    '',
+    
     'https://www.cmdos.app/*',
     'https://chatgpt.com/*',
     'https://claude.ai/*',
@@ -170,7 +170,7 @@ const manifest = {
   externally_connectable: {
     matches: [
       'https://www.cmdos.app/*',
-      '',
+      
       'https://www.cmdos.app/*',
     ],
   },
