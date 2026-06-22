@@ -1,5 +1,5 @@
 
-cmdOS is a keyboard-first command terminal for the web.
+cmdos is a keyboard-first command terminal for the web.
 
 Access your links, notes, snippets, apps, automations, agents, files, browser history, and daily workflows from one command bar.
 
