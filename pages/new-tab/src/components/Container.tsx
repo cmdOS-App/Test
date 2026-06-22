@@ -157,6 +157,7 @@ import OnboardingLoader from './Features/OnboardingLoader';
 import ModuleSpeaker from './Editor/ModuleSpeaker';
 import SubscriptionsPanel from './Subscriptions/SubscriptionsPanel';
 import ManageSubscriptionPanel from './Subscriptions/ManageSubscriptionPanel';
+import SettingsLayout from './Layout/SettingsLayout';
 import GeneralSettingsPanel from './Layout/GeneralSettingsPanel';
 import AllWorkspacesPanel from './Layout/AllWorkspacesPanel';
 import WorkspaceSettingsPanel from './Layout/WorkspaceSettingsPanel';
@@ -3518,41 +3519,16 @@ const Container: React.FC<ContainerProps> = ({
       );
     }
 
-    if (mainView.kind === 'generalSettings') {
+    if (
+      mainView.kind === 'generalSettings' ||
+      mainView.kind === 'backup' ||
+      mainView.kind === 'allWorkspaces' ||
+      mainView.kind === 'workspaceSettings'
+    ) {
       return (
         <div className="flex-1 min-h-0 pt-6">
           <div className="h-full w-full flex flex-col overflow-hidden px-6 md:px-12 lg:px-24 py-6 md:py-10">
-            <GeneralSettingsPanel onClose={handleGoHome} initialTab={mainView.section} />
-          </div>
-        </div>
-      );
-    }
-
-    if (mainView.kind === 'backup') {
-      return (
-        <div className="flex-1 min-h-0 pt-6">
-          <div className="h-full w-full flex flex-col overflow-hidden px-6 md:px-12 lg:px-24 py-6 md:py-10">
-            <BackupPanel onClose={handleGoHome} />
-          </div>
-        </div>
-      );
-    }
-
-    if (mainView.kind === 'allWorkspaces') {
-      return (
-        <div className="flex-1 min-h-0 pt-6">
-          <div className="h-full w-full flex flex-col overflow-hidden px-6 md:px-12 lg:px-24 py-6 md:py-10">
-            <AllWorkspacesPanel onClose={handleGoHome} />
-          </div>
-        </div>
-      );
-    }
-
-    if (mainView.kind === 'workspaceSettings') {
-      return (
-        <div className="flex-1 min-h-0 pt-6">
-          <div className="h-full w-full flex flex-col overflow-hidden px-6 md:px-12 lg:px-24 py-6 md:py-10">
-            <WorkspaceSettingsPanel onClose={handleGoHome} />
+            <SettingsLayout view={mainView as any} onClose={handleGoHome} />
           </div>
         </div>
       );

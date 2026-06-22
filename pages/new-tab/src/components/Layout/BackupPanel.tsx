@@ -43,6 +43,7 @@ import { getFaviconUrl } from '../SearchComponents/Searchbar/utils';
 
 interface BackupPanelProps {
   onClose: () => void;
+  hideSidebar?: boolean;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -122,7 +123,7 @@ type DriveStatus =
 
 // ─── Main Panel ──────────────────────────────────────────────────────────────
 
-const BackupPanel: React.FC<BackupPanelProps> = ({ onClose }) => {
+const BackupPanel: React.FC<BackupPanelProps> = ({ onClose, hideSidebar }) => {
   const dispatch = useDispatch();
   const allTeams = useSelector(selectAllData) || [];
 
@@ -476,9 +477,10 @@ const BackupPanel: React.FC<BackupPanelProps> = ({ onClose }) => {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full w-full max-w-[1300px] mx-auto bg-[var(--color-modalBg)] border border-[var(--color-borderDefault)] shadow-2xl rounded-2xl overflow-hidden font-sans select-none backdrop-blur-xl animate-in fade-in duration-200">
+    <div className={hideSidebar ? "flex-1 flex flex-col min-w-0" : "flex h-full w-full max-w-[1300px] mx-auto bg-[var(--color-modalBg)] border border-[var(--color-borderDefault)] shadow-2xl rounded-2xl overflow-hidden font-sans select-none backdrop-blur-xl animate-in fade-in duration-200"}>
       {/* LEFT SIDEBAR */}
-      <div className="w-[175px] shrink-0 border-r border-[var(--color-borderDefault)] bg-[var(--color-sidebarBg)]/40 px-3 py-5 flex flex-col justify-between">
+      {!hideSidebar && (
+        <div className="w-[175px] shrink-0 border-r border-[var(--color-borderDefault)] bg-[var(--color-sidebarBg)]/40 px-3 py-5 flex flex-col justify-between">
         <div className="space-y-6">
           <nav className="space-y-6">
             {sidebarSections.map(section => (
@@ -600,7 +602,7 @@ const BackupPanel: React.FC<BackupPanelProps> = ({ onClose }) => {
 
         </div>
       </div>
-
+      )}
       {/* RIGHT CONTENT */}
       <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-editorBg)]/20 relative">
         {/* Header */}

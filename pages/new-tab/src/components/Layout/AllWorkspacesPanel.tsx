@@ -31,6 +31,28 @@ import { getFaviconUrl } from '../SearchComponents/Searchbar/utils';
 
 interface AllWorkspacesPanelProps {
   onClose: () => void;
+  hideSidebar?: boolean;
+}
+
+/**
+ * Determines whether a team belongs to local storage or CMD OS cloud.
+ *
+ * Priority order:
+ *  1. team.storageMode === 'local'     → Local
+ *  2. team.storageMode === 'cloud'     → Cloud (CMD OS)
+ *  3. team_id starts with 'free_org_' → Cloud (CMD OS personal space for logged-in user)
+ *  4. team.is_personal_space === true  → Cloud (CMD OS personal space)
+ *  5. team_id starts with 'workspace_' or 'local_' → Local (legacy IDs)
+ *  6. Default                          → Local (unregistered / offline user)
+ */
+function resolveStorageMode(team: Team): 'local' | 'cloud' {
+  if (team.storageMode === 'local') return 'local';
+  if (team.storageMode === 'cloud') return 'cloud';
+  const id = (team.team_id || '').toLowerCase();
+  if (id.startsWith('free_org_')) return 'cloud';
+  if (team.is_personal_space === true) return 'cloud';
+  if (id.startsWith('workspace_') || id.startsWith('local_')) return 'local';
+  return 'local'; // safe default for non-CMD-OS users
 }
 
 interface WorkspaceRowData {
@@ -52,7 +74,7 @@ interface WorkspaceRowData {
   workspace: Workspace;
 }
 
-export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose }) => {
+export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose, hideSidebar }) => {
   const dispatch = useDispatch();
   const allTeams = useSelector(selectAllData) || [];
 
@@ -141,8 +163,8 @@ export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose 
 
     allTeams.forEach((team: Team) => {
       const teamName = team.team_name || 'Workspace';
-      const isPersonal = team.is_personal_space || teamName.toLowerCase().includes('personal');
-      const storageMode = (team as any).storageMode === 'local' ? 'local' : 'cloud';
+      const isPersonal = team.is_personal_space === true;
+      const storageMode = resolveStorageMode(team); // ← uses priority-ordered logic
 
       (team.workspaces || []).forEach((ws: Workspace) => {
         const metrics = getWorkspaceMetrics(ws);
@@ -159,6 +181,12 @@ export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose 
         const lastBackup = 'Today, 6:36 PM';
 
         const displayName = isPersonal ? 'Personal Space' : teamName;
+        // Build path from resolved storageMode so it always reflects actual storage
+        const wsSlug = (ws.workspace_name || displayName).toLowerCase().replace(/\s+/g, '-');
+        const teamSlug = teamName.toLowerCase().replace(/\s+/g, '-');
+        const path = storageMode === 'cloud'
+          ? `/cloud/${teamSlug}/${wsSlug}`
+          : `/local/${wsSlug}`;
 
         list.push({
           id: ws.workspace_id,
@@ -166,9 +194,7 @@ export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose 
           teamName: isPersonal ? 'Personal Space' : teamName,
           isPersonal,
           storageMode,
-          path: storageMode === 'cloud' 
-            ? `/cloud/${teamName.replace(/\s+/g, '-').toLowerCase()}/${displayName.toLowerCase().replace(/\s+/g, '-')}`
-            : `/local/${displayName.toLowerCase().replace(/\s+/g, '-')}`,
+          path,
           todosCount: metrics.todos,
           automationsCount: metrics.automations,
           notesCount: metrics.notes,
@@ -246,11 +272,11 @@ export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose 
   ] as const;
 
   const GoogleDriveIcon = () => (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
-      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
-      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l25.4-44c.8-1.4 1.2-2.95 1.2-4.5h-55l13.75 23.8z" fill="#ffbc00"/>
-    </svg>
+    <img
+      src={getFaviconUrl('drive.google.com')}
+      className="w-4 h-4 rounded-sm shrink-0"
+      alt="Google Drive"
+    />
   );
 
   const LocalFolderIcon = () => (
@@ -258,6 +284,278 @@ export const AllWorkspacesPanel: React.FC<AllWorkspacesPanelProps> = ({ onClose 
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
     </svg>
   );
+
+  if (hideSidebar) {
+    return (
+      <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-editorBg)]/20 relative">
+        {/* Header bar */}
+        <div className="flex items-center justify-between p-6 pb-4 shrink-0 border-b border-[var(--color-borderDefault)]/60">
+          <div>
+            <h1 className="text-xl font-extrabold text-[var(--color-textPrimary)] tracking-tight">
+              Cloud & Sync
+            </h1>
+            <p className="text-xs text-[var(--color-textSecondary)] mt-1">
+              Manage sync locations, backups, and properties across all workspaces.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg border border-[var(--color-borderDefault)] bg-[var(--color-hoverBg)] text-[var(--color-textSecondary)] hover:text-[var(--color-textPrimary)] hover:border-[var(--color-borderActive)] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+            title="Close"
+          >
+            <FiX size={16} />
+          </button>
+        </div>
+
+        {/* Workspaces List/Table */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+          <div className="w-full border border-white/5 bg-neutral-900/10 rounded-xl overflow-hidden">
+            
+            {/* Table Header */}
+            <div className="grid grid-cols-[1.5fr_2.5fr_0.8fr_1.2fr_1fr_1.5fr] border-b border-white/5 bg-white/5 py-3 px-4 text-xs font-semibold text-neutral-400 select-none">
+              <div>Workspace</div>
+              <div>Location / Source</div>
+              <div className="pl-2">Todos</div>
+              <div className="pl-2">Automations</div>
+              <div>Size</div>
+              <div className="text-right pr-2">Actions</div>
+            </div>
+
+            {/* Table Body */}
+            {workspacesList.length === 0 ? (
+              <div className="py-12 text-center text-xs text-neutral-500">
+                No workspaces found.
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {workspacesList.map(ws => {
+                  const isExpanded = !!expandedRows[ws.id];
+
+                  return (
+                    <div key={ws.id} className="flex flex-col w-full transition-colors hover:bg-white/[0.01]">
+                      
+                      {/* Collapsible Row Header */}
+                      <div 
+                        onClick={() => toggleRow(ws.id)}
+                        className="grid grid-cols-[1.5fr_2.5fr_0.8fr_1.2fr_1fr_1.5fr] py-4 px-4 text-xs items-center cursor-pointer select-none"
+                      >
+                        {/* Workspace Name & Chevron */}
+                        <div className="flex items-center gap-2 pr-2">
+                          <span className="text-neutral-400">
+                            {isExpanded ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
+                          </span>
+                          <span className="font-semibold text-white truncate">
+                            {ws.name}
+                          </span>
+                        </div>
+                        {/* Location / Source */}
+                        <div className="flex items-center gap-1.5 pr-2 min-w-0">
+                          {ws.storageMode === 'cloud' ? <GoogleDriveIcon /> : <LocalFolderIcon />}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-medium text-neutral-200 truncate">
+                              {ws.storageMode === 'cloud' ? 'Google Drive' : 'Local Drive'}
+                            </span>
+                            <span className="text-[10px] text-neutral-500 truncate font-mono mt-0.5">
+                              {ws.path}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Counts & Size */}
+                        <div className="text-neutral-300 font-medium pl-2">{ws.todosCount}</div>
+                        <div className="text-neutral-300 font-medium pl-2">{ws.automationsCount}</div>
+                        <div className="text-neutral-400">{ws.sizeEstimate}</div>
+
+                        {/* Row Actions */}
+                        <div className="flex items-center justify-end pr-2" onClick={e => e.stopPropagation()}>
+                          <button 
+                            onClick={() => exportBackup()}
+                            className="px-3 py-1.5 rounded-lg bg-neutral-800 border border-white/5 hover:bg-neutral-700 text-white font-semibold transition cursor-pointer select-none active:scale-95 whitespace-nowrap"
+                          >
+                            Backup now
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Collapsible Details Panel */}
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden bg-black/10 border-t border-white/5"
+                          >
+                            <div className="flex flex-col p-5 select-none gap-6 text-xs text-left">
+                              {/* Top Content Row */}
+                              <div className="grid grid-cols-4 gap-6">
+                                {/* 1. Included Items */}
+                                <div className="space-y-4 border-r border-white/5 pr-4">
+                                  <h4 className="font-bold text-neutral-400 uppercase tracking-wider text-[10px]">
+                                    Included Items
+                                  </h4>
+                                  <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2.5 text-neutral-200">
+                                        <FiCheck size={14} className="text-neutral-400 shrink-0" />
+                                        <span>Todos</span>
+                                      </div>
+                                      <span className="font-mono text-neutral-400">{ws.todosCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2.5 text-neutral-200">
+                                        <FiFileText size={14} className="text-neutral-400 shrink-0" />
+                                        <span>Notes</span>
+                                      </div>
+                                      <span className="font-mono text-neutral-400">{ws.notesCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2.5 text-neutral-200">
+                                        <FiLink size={14} className="text-neutral-400 shrink-0" />
+                                        <span>Links</span>
+                                      </div>
+                                      <span className="font-mono text-neutral-400">{ws.linksCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2.5 text-neutral-200">
+                                        <FiTerminal size={14} className="text-neutral-400 shrink-0" />
+                                        <span>Snippets</span>
+                                      </div>
+                                      <span className="font-mono text-neutral-400">{ws.snippetsCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2.5 text-neutral-200">
+                                        <FiZap size={14} className="text-neutral-400 shrink-0" />
+                                        <span>Automations</span>
+                                      </div>
+                                      <span className="font-mono text-neutral-400">{ws.automationsCount}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 2. Location / Source */}
+                                <div className="space-y-4 border-r border-white/5 pr-4">
+                                  <h4 className="font-bold text-neutral-400 uppercase tracking-wider text-[10px]">
+                                    Location / Source
+                                  </h4>
+                                  <div className="space-y-3 text-neutral-300">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Folder</span>
+                                      <span className="font-mono break-all">{ws.path}</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Type</span>
+                                      <span>{ws.storageMode === 'cloud' ? 'Google Drive' : 'Local Drive'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 3. Backup Settings */}
+                                <div className="space-y-4 border-r border-white/5 pr-4">
+                                  <h4 className="font-bold text-neutral-400 uppercase tracking-wider text-[10px]">
+                                    Backup Settings
+                                  </h4>
+                                  <div className="space-y-3 text-neutral-300">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Backup location</span>
+                                      <span>Cloud (Default)</span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Version retention</span>
+                                      <span>30 days</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 4. Status & Sync */}
+                                <div className="space-y-4">
+                                  <h4 className="font-bold text-neutral-400 uppercase tracking-wider text-[10px]">
+                                    Status & Sync
+                                  </h4>
+                                  <div className="space-y-3 text-neutral-300">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Status</span>
+                                      <span className="flex items-center gap-1 font-semibold text-neutral-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-400"></span> Available
+                                      </span>
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Last Backup</span>
+                                      <span>{ws.lastBackup}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Aligned Buttons Row */}
+                              <div className="grid grid-cols-4 gap-6 pt-4 border-t border-white/5 items-end">
+                                <div className="border-r border-white/5 pr-4">
+                                  <button 
+                                    onClick={() => {
+                                      dispatch(setSelectedTeam(ws.team));
+                                      dispatch(setSelectedWorkspace(ws.workspace));
+                                      onClose();
+                                    }}
+                                    className="w-full text-center py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-semibold border border-white/5 transition cursor-pointer select-none active:scale-95"
+                                  >
+                                    Manage Included Items
+                                  </button>
+                                </div>
+                                <div className="border-r border-white/5 pr-4">
+                                  <button 
+                                    onClick={() => {
+                                      dispatch(setSelectedTeam(ws.team));
+                                      dispatch(setSelectedWorkspace(ws.workspace));
+                                      onClose();
+                                    }}
+                                    className="w-full text-center py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-semibold border border-white/5 transition cursor-pointer select-none active:scale-95"
+                                  >
+                                    Open Folder
+                                  </button>
+                                </div>
+                                <div className="border-r border-white/5 pr-4">
+                                  <button 
+                                    onClick={() => {
+                                      dispatch(navigateToView({
+                                        kind: 'organizationSettings',
+                                        orgId: ws.team.team_id,
+                                        orgName: ws.team.team_name,
+                                      }));
+                                    }}
+                                    className="w-full text-center py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-semibold border border-white/5 transition cursor-pointer select-none active:scale-95"
+                                  >
+                                    Edit Settings
+                                  </button>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => exportBackup()}
+                                    className="flex-1 text-center py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition cursor-pointer select-none active:scale-95 whitespace-nowrap"
+                                  >
+                                    Backup now
+                                  </button>
+                                  <button className="flex-1 text-center py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-400 font-semibold border border-white/5 cursor-not-allowed select-none opacity-50 whitespace-nowrap">
+                                    Restore...
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full max-w-[1300px] mx-auto bg-[var(--color-modalBg)] border border-[var(--color-borderDefault)] shadow-2xl rounded-2xl overflow-hidden font-sans select-none backdrop-blur-xl animate-in fade-in duration-200">
