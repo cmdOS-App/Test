@@ -10,8 +10,8 @@
 **/dist-zip
 chrome-extension/manifest.js
 chrome-extension/pre-build.tsconfig.tsbuildinfo
-eslint.config.js
 tsconfig.tsbuildinfo
+
 
 # env
 **/.env.*
@@ -33,10 +33,6 @@ instructions/
 .agents/
 skills-lock.json
 
-package.json
-**/package.json
-
-docs/
 
 # Private SaaS Features & Providers (Do not push to public)
 pages/new-tab/src/components/OrganizationPanel/InviteMembersPopup.tsx
