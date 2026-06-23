@@ -1,243 +1,74 @@
+**Browse 1.2x Faster with cmdOS**
 
-cmdOS is a keyboard-first command terminal for the web.
+cmdOS is an open-source command terminal for your browser. Use commands and hotkeys to find anything, launch workflows, reduce context switching, and complete everyday browser tasks faster.
 
-Access your links, notes, snippets, apps, automations, agents, files, browser history, and daily workflows from one command bar.
+**Use Cases**
 
-## Why cmdOS
+**Universal Search:** Press <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">Alt + S</code> to find bookmarks, notes, files, apps, browser history, AI agents, and web tools.
 
-cmdOS turns repeated browser actions into commands.
+**Command Shortcuts:** Type commands like <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">/notes</code>, <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">/links</code>, <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">/shortcuts</code>, or <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">/screenshot</code> to access actions instantly.
 
-- Search websites instantly
-- Open links, apps, files, and tab groups
-- Find notes and saved resources
-- Insert reusable snippets and templates
-- Run browser utilities
-- Launch routines and automations
-- Create tasks and calendar events
-- Assign shortcuts to frequently used actions
+**Text Snippets:** Type <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">c/</code> inside any supported input field to search and insert saved replies, prompts, and templates.
 
+**Website Search:** Use commands like <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">g browser automation</code>, <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">yt startup interviews</code>, or <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">rd productivity tools</code>.
 
+**Keyboard Hotkeys:** Assign <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">Alt + 1</code>, <code style="color: #2e8b57; font-family: monospace; background-color: rgba(46, 139, 87, 0.1); padding: 2px 4px; border-radius: 4px;">Alt + 2</code>, and other shortcuts to open complete tab groups, dashboards, or project setups.
 
-## Features
+**Workflow Automation:** Build reusable routines for meeting preparation, client research, reporting, onboarding, and daily work.
 
-### Command palette
+Built for people who want to browse faster, click less, and turn everyday browser work into commands.
 
-Open cmdOS with `Alt + S` and run commands from one place.
+---
 
-Examples:
-/notes
-/link
-/shortcuts
-/screenshot
+### **Getting Started**
 
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/taskbot-dev/NotesExtension.git
+   cd NotesExtension
+   ```
 
-### Web search commands
+2. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
 
-Create short commands for the websites you use every day.
+3. **Start the development server:**
+   ```bash
+   pnpm run build
+   ```
 
+4. **Load the extension in Chrome:**
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable **Developer mode** in the top right corner.
+   - Click **Load unpacked** and select the `dist` folder generated in your project.
 
-g browser automation (Google serach)
-yt startup interviews (Youtube search)
-Rd productivity tools
+### **Tech Stack**
 
+**Core Web**
+- **Framework:** React 19
+- **Language:** TypeScript
+- **Bundler:** Vite
+- **Styling:** Tailwind CSS
 
+**Chrome Extension (Manifest V3)**
+- **APIs Used:** `chrome.storage`, `chrome.runtime`, `chrome.tabs`, `chrome.scripting`, `chrome.alarms`, `chrome.notifications`, `chrome.bookmarks`, `chrome.cookies`
+- **Background:** Service Worker
+- **Injection:** Content Scripts (UI overlays & DOM injection)
 
-### Notes and snippets
+**Backend & Integrations**
+- **Database & Backend:** Supabase
+- **Authentication:** Clerk / Supabase Auth
+- **Payments & Subscriptions:** Stripe
+- **Integrations:** Google Drive Backup, GitHub API
 
-Create rich notes and reusable text snippets.
+**State Management & Data**
+- **Global State:** Redux Toolkit & Zustand
+- **Persistence:** Redux Persist & Chrome Storage Local
 
-Type `c/` inside supported website input fields to search and insert saved snippets without leaving the page.
-
-### Links and tab groups
-
-Save individual links or groups of browser tabs and open them together.
-
-Dynamic links can use `{query}`:
-
-```txt
-https://google.com/search?q={query}
-```
-
-### Routines
-
-Combine links, notes, tabs, and commands into reusable workflows.
-
-Examples:
-
-- Morning startup
-- Stand-up preparation
-- Client research
-- Meeting preparation
-- Weekly reporting
-
-### Browser utilities
-
-cmdOS includes utilities for common browser tasks:
-
-- Visible-page screenshots
-- Full-page screenshots
-- Image downloads
-- Table extraction
-- CSV export
-- Print-friendly PDFs
-
-### Keyboard shortcuts
-
-Save multiple links as one group and open them together with a single shortcut.
-
-Examples:
-
-Alt + 1 — Open Gmail, Slack, Calendar, and your task manager
-Alt + 2 — Open all client project links
-Alt + 3 — Open your daily analytics dashboards
-Alt + 4 — Open research tools and saved resources
-Alt + 5 — Open all links needed for a meeting
-Alt + 6 — Open development tools, GitHub, Linear, and documentation
-Alt + 7 — Open your social media publishing tools
-Alt + 8 — Open finance, reporting, and payment dashboards
-
-Useful bulk link groups:
-
-Morning workspace
-Client onboarding
-Stand-up preparation
-Weekly reporting
-Product research
-Content publishing
-Sales follow-up
-Customer support
-Development setup
-Meeting preparation
-
-One shortcut can open every link you need for a workflow at once.
-### Workspaces
-
-Organize resources using workspaces, folders, and subfolders.
-
-Folders can include custom icons, emojis, SVGs, and accent colors.
-
-
-## Open-source and private features
-
-The repository separates open-source and proprietary features using the `@private-features` alias.
-
-This keeps the public build separate from hosted collaboration, sharing, billing, and other commercial features.
-
-## Tech stack
-
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- pnpm workspaces
-- Turborepo
-- Chrome Extension APIs
-
-## Workspace structure
-
-This project is configured as a monorepo using **pnpm workspaces** and **Turborepo**.
-
-- **[packages/](packages/)**: Shared internal packages
-  - `ui/`: Design system components
-  - `shared/`: Utility helper functions and schemas
-  - `storage/`: Chrome storage helpers
-  - `env/`: Environment variable schemas
-  - `module-manager/`: Core module configuration
-- **[pages/](pages/)**: Chrome Extension entry points
-  - `new-tab/`: Primary new tab workspace dashboard
-  - `popup/`: Browser toolbar popup
-  - `side-panel/`: Native sidebar integrations
-  - `options/`: Configuration and settings pages
-  - `devtools/` and `devtools-panel/`: Developer tools panel
-  - `content/` and `content-ui/`: Injected page content scripts
-- **[docs/](docs/)**: Documentation and project guides
-
-## Getting started
-
-### Prerequisites
-
-- **Node.js**: `v22.12.0` or higher
-- **pnpm**: `v9.15.1` or higher
-- Google Chrome or another Chromium-based browser
-
-### Installation
-
-Install workspace dependencies:
-
-```bash
-pnpm install
-```
-
-### Development
-
-Run the development environment:
-
-```bash
-pnpm dev
-```
-
-The development server watches for changes and rebuilds the extension automatically.
-
-Open:
-
-```txt
-chrome://extensions/
-```
-
-Enable **Developer mode**, select **Load unpacked**, and choose the generated `dist/` directory.
-
-### Building
-
-Build the production-ready Chrome Extension:
-
-```bash
-pnpm build
-```
-
-Build in public open-source mode without private sharing and collaboration interfaces:
-
-```powershell
-$env:VITE_ENABLE_SHARING="false"
-pnpm run build
-```
-
-
-
-## Contributing
-
-Contributions, bug reports, feature requests, and documentation improvements are welcome.
-
-Before submitting a pull request:
-
-1. Create a new branch.
-2. Keep the change focused.
-3. Test the extension locally.
-4. Explain the purpose of the change clearly.
-
-## Security
-
-Do not report security vulnerabilities through public GitHub issues.
-
-Report security concerns privately to the maintainers.
-
-## License
-
-This project is licensed under the **Apache License, Version 2.0**. See the [LICENSE](LICENSE) file for the full text.
-
-
-
-Copyright 2024-2026 RPA TASKLABS AUTOMATION SOFTWARE PRIVATE LIMITED
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-
+**Key Libraries**
+- **Search:** Fuse.js (Fuzzy search matching)
+- **Drag & Drop:** `@dnd-kit`
+- **Large Lists:** `@tanstack/react-virtual` & `@tanstack/react-table`
+- **Animations:** Framer Motion
+- **Analytics / Charts:** Recharts
