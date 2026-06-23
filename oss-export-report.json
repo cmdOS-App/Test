@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-06-23T12:04:59.067Z",
+  "timestamp": "2026-06-23T18:17:51.055Z",
   "status": "SUCCESS",
   "summary": {
-    "totalCopied": 664,
-    "totalMocked": 11,
+    "totalCopied": 667,
+    "totalMocked": 12,
     "totalExcluded": 0
   },
   "details": {
@@ -49,6 +49,7 @@
       "packages/hmr/package.json",
       "packages/hmr/rollup.config.ts",
       "packages/hmr/tsconfig.json",
+      "packages/i18n/.gitignore",
       "packages/i18n/index.mts",
       "packages/i18n/package.json",
       "packages/i18n/prepare-build.tsconfig.json",
@@ -623,6 +624,7 @@
       "pages/new-tab/src/components/SnippetBuilder/extensions/FieldNodeExtension.ts",
       "pages/new-tab/src/components/SnippetBuilder/utils/snippetAstToTiptap.ts",
       "pages/new-tab/src/components/SnippetBuilder/utils/tiptapToAst.ts",
+      "pages/new-tab/src/components/Subscriptions/private-mocks/SubscriptionsPanel.tsx",
       "pages/new-tab/src/components/Views/HomeView/AllItemsView.tsx",
       "pages/new-tab/src/components/Views/HomeView/HomeView.tsx",
       "pages/new-tab/src/components/Views/HomeView/InteractiveItemsList.tsx",
@@ -671,7 +673,8 @@
       ".prettierrc",
       ".prettierignore",
       "eslint.config.js",
-      "eslint.config.ts"
+      "eslint.config.ts",
+      ".env.oss"
     ],
     "mocked": [
       "pages/Apis/storage/providers/CloudProvider.ts",
@@ -684,7 +687,8 @@
       "pages/new-tab/src/components/OrganizationPanel/JoinLinksPanel.tsx",
       "pages/new-tab/src/components/OrganizationPanel/WorkspaceSharePanel.tsx",
       "pages/new-tab/src/components/OrganizationPanel/SaaSControls.tsx",
-      "pages/new-tab/src/components/OrganizationPanel/CreateOrganizationPanel.tsx"
+      "pages/new-tab/src/components/OrganizationPanel/CreateOrganizationPanel.tsx",
+      "pages/new-tab/src/components/Subscriptions/SubscriptionsPanel.tsx"
     ],
     "excluded": []
   }

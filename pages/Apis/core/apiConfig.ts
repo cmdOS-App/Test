@@ -10,8 +10,8 @@ export const SUPABASE_BASE_URL =
   '';
 
 
-// Section A — cmdos.app constants
-export const CMD_DOMAIN = 'cmdos.app';
+// Section A — example.com constants
+export const CMD_DOMAIN = 'example.com';
 export const CMD_BASE_URL = `https://www.${CMD_DOMAIN}`;
 export const CMD_URL = `https://${CMD_DOMAIN}`;
 
@@ -28,8 +28,8 @@ export const CMDOS_ORG_USER_DETAIL_URL = (orgId: string, userId: string) => `${C
 export const CMDOS_GET_USAGE_URL = (userId: string, year: number, month: number) =>
   `${CMD_URL}/api/get_usage?userId=${encodeURIComponent(userId)}&year=${year}&month=${month}`;
 
-// Function-based dynamic URL path constants specifically using cmdos.app with www vs non-www
-// workspaceApiServices.ts L105 uses cmdos.app/api/organizations/${org_id}/members (non-www)
+// Function-based dynamic URL path constants specifically using example.com with www vs non-www
+// workspaceApiServices.ts L105 uses example.com/api/organizations/${org_id}/members (non-www)
 export const CMDOS_ORG_MEMBERS_URL_WITHOUT_WWW = (orgId: string) => `https://${CMD_DOMAIN}/api/organizations/${orgId}/members`;
 
 // General user-facing UI routes

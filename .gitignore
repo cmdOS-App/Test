@@ -15,6 +15,7 @@ tsconfig.tsbuildinfo
 
 # env
 **/.env.*
+!.env.oss
 **/.env
 
 # etc
